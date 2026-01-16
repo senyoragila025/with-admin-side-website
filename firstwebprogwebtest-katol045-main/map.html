@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WanderWise - Tourist Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="stylesheets.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</head>
+<body>
+    <div class="header-bar">
+        <div class="header-elements">
+            <div class="left-menu">
+                <button id="hamburger-btn" class="hamburger-btn" aria-label="Toggle menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="logo">
+                    <img src="images/icons8-location-48.png" alt="WanderWise logo">
+                </div>
+                <div class="header-text">
+                    <p id="Wise">WanderWise</p>
+                    <p id="Tagline">Explore Baguio City</p>
+                </div>
+            </div>
+            <div class="right-menu">
+                <div class="user-info">
+                    <span id="user-name">User</span>
+                </div>
+                <button id="theme-toggle" class="theme-btn" title="Toggle dark/light mode">🌙</button>
+                <button id="help-btn" class="theme-btn" title="Show help" style="font-size:18px;">❓</button>
+                <button id="map-type-btn" class="theme-btn" title="Toggle map type">🛰️</button>
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="map-card">
+            <div class="sidebar-container" id="sidebar">
+                <div class="sidebar-top">
+                    <h2>Tourist Destinations</h2>
+                    <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">×</button>
+                </div>
+                <hr>
+                <div class="scroll-area" id="dest-list"></div>
+
+                <div id="filter-panel" style="padding: 12px; background: #f9f9f9; border-top: 2px solid #e0e0e0; margin-top: 12px;">
+                    <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 14px; color: #333;">🎯 Filter Destinations</h3>
+                    
+                    <div class="filter-group">
+                        <div class="filter-group-title">Parks & Nature</div>
+                        <div class="filter-list">
+                            <button class="filter-btn" data-filter="burnham">Burnham</button>
+                            <button class="filter-btn" data-filter="mines">Mines View</button>
+                            <button class="filter-btn" data-filter="wright">Wright</button>
+                            <button class="filter-btn" data-filter="botanical">Botanical</button>
+                            <button class="filter-btn" data-filter="campjohn">Camp John</button>
+                            <button class="filter-btn" data-filter="strawberry">Strawberry</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <div class="filter-group-title">Cultural & Heritage</div>
+                        <div class="filter-list">
+                            <button class="filter-btn" data-filter="heritage">Heritage</button>
+                            <button class="filter-btn" data-filter="tamawan">Tam-Awan</button>
+                            <button class="filter-btn" data-filter="session">Session Road</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <div class="filter-group-title">Shopping</div>
+                        <div class="filter-list">
+                            <button class="filter-btn" data-filter="smbaguio">SM Baguio</button>
+                        </div>
+                    </div>
+
+                    <button id="show-all-btn" style="width: 100%; padding: 10px; margin-top: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;">📍 Show All Destinations</button>
+                </div>
+            </div>
+
+            <div class="map-viewport">
+                <div id="map"></div>
+            </div>
+        </div>
+    </main>
+
+    <div class="detail-modal" id="detail-modal">
+        <div class="detail-modal-content">
+            <div class="detail-modal-header">
+                <button class="detail-modal-close" id="detail-modal-close">×</button>
+                <h2 class="detail-modal-title" id="detail-title"></h2>
+                <div class="detail-coordinates" id="detail-coords"></div>
+            </div>
+            <div class="detail-modal-body">
+                <p class="detail-description" id="detail-desc"></p>
+                
+                <div style="margin: 16px 0;">
+                    <h4 style="margin-top: 0; font-size: 14px;">👥 Crowd Status</h4>
+                    <div class="crowd-percentage" id="crowd-percent">--%</div>
+                    <div class="crowd-bar">
+                        <div class="crowd-fill" id="crowd-bar-fill"></div>
+                    </div>
+                    <p id="crowd-text" style="margin: 6px 0; font-size: 12px; color: #666;"></p>
+                </div>
+
+                <div style="margin: 16px 0; background: #f9f9f9; padding: 12px; border-radius: 6px;">
+                    <h4 style="margin-top: 0; font-size: 14px;">⭐ Rate this Destination</h4>
+                    <form id="comment-form" style="display:flex;gap:6px;flex-direction:column;">
+                        <input type="text" id="comment-name" placeholder="Your name (required)" required style="padding:8px;border-radius:4px;border:1px solid #ddd;font-size:13px;">
+                        <div class="rating-input" style="justify-content: flex-start;">
+                            <span class="star" data-rating="1">⭐</span>
+                            <span class="star" data-rating="2">⭐</span>
+                            <span class="star" data-rating="3">⭐</span>
+                            <span class="star" data-rating="4">⭐</span>
+                            <span class="star" data-rating="5">⭐</span>
+                            <span id="ratingText" style="margin-left:12px;font-weight:600;font-size:13px;">Not rated</span>
+                        </div>
+                        <textarea id="comment-text" placeholder="Share your experience..." rows="2" style="padding:8px;border-radius:4px;border:1px solid #ddd;font-size:13px;resize:vertical;"></textarea>
+                        <button type="submit" style="padding:8px;background:#2ecc71;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;">Post Review</button>
+                    </form>
+                </div>
+
+                <div id="comments-section" style="margin-top: 16px;">
+                    <h4 style="margin-top: 0; font-size: 14px;">💬 Reviews</h4>
+                    <div id="comments-list" class="comments-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="help-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:1001;max-width:400px;max-height:80vh;overflow-y:auto;">
+        <button style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:24px;cursor:pointer;" onclick="document.getElementById('help-modal').style.display='none'">×</button>
+        <h2 style="margin-top:0;color:#667eea;">📖 How to Use WanderWise</h2>
+        <h3>👥 For Visitors:</h3>
+        <p><strong>1. Select Destination</strong> - Click any location card to view details</p>
+        <p><strong>2. View Crowd Status</strong> - See percentage of crowdedness based on visitor ratings</p>
+        <p><strong>3. Rate & Review</strong> - Share your experience with 1-5 stars</p>
+        <p><strong>4. Filter Locations</strong> - Use filters to find parks, cultural sites, or shopping</p>
+        <p><strong>5. Dark Mode</strong> - Click 🌙 button for eye-friendly night mode</p>
+        <h3>🗺️ Map Features:</h3>
+        <p><strong>Switch Map Type</strong> - Click 🛰️ to toggle between satellite and street view</p>
+        <p><strong>Zoom & Pan</strong> - Scroll to zoom, drag to navigate the map</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-providers@2.0.0/leaflet-providers.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        /* MAP APPLICATION INITIALIZATION
+           Purpose: Main public-facing tourist destination explorer
+           Features: Authentication check, interactive map, destination details, crowd tracking
+        */
+
+        // ===== AUTHENTICATION CHECK =====
+        // ===== SECURITY & SESSION VALIDATION =====
+        function validateSessionSecurity() {
+            const session = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Check if session exists
+            if (!session) {
+                window.location.href = 'auth.html';
+                return false;
+            }
+            
+            // Verify session has required fields
+            if (!session.userId || !session.email || !session.loginTime) {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'auth.html';
+                return false;
+            }
+            
+            // Check session expiry (24 hours)
+            const sessionDuration = 24 * 60 * 60 * 1000;
+            const currentTime = new Date().getTime();
+            if (currentTime - session.loginTime > sessionDuration) {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'auth.html';
+                return false;
+            }
+            
+            // Verify user exists in database
+            const users = JSON.parse(localStorage.getItem('wanderwiseUsers') || '[]');
+            const userExists = users.find(u => u.id === session.userId && u.email === session.email);
+            
+            if (!userExists) {
+                console.warn('⚠️ User record not found in database');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'auth.html';
+                return false;
+            }
+            
+            // Verify account is active
+            if (userExists.status !== 'active') {
+                console.warn('⚠️ Account is not active');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'auth.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        function checkAuth() {
+            if (!validateSessionSecurity()) {
+                return;
+            }
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            document.getElementById('user-name').textContent = '👤 ' + currentUser.name.split(' ')[0];
+        }
+
+        // ===== LOGOUT =====
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to logout?')) {
+                // Securely clear all session data
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminLoginTime');
+                localStorage.removeItem('pendingUserVerification');
+                
+                showNotification('✅ Logged out securely', 'success', 1000);
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 1000);
+            }
+        });
+
+        // ===== DATA STRUCTURE =====
+        const destinations = [
+            { id: 'burnham', name: '📌 Burnham Park', lat: 16.4070, lng: 120.5960, desc: 'Historic public park with gardens and recreational facilities. One of Baguio\'s most iconic destinations.', icon: '🌳', category: 'parks' },
+            { id: 'mines', name: '📌 Mines View Park', lat: 16.3799, lng: 120.5472, desc: 'Scenic viewpoint overlooking the Old Mines and Baguio cityscape. Perfect for sunset views.', icon: '🏔️', category: 'parks' },
+            { id: 'wright', name: '📌 Wright Park', lat: 16.4068, lng: 120.5984, desc: 'Pine-forested park with walking trails and picnic areas. Great for nature lovers.', icon: '🌲', category: 'parks' },
+            { id: 'botanical', name: '📌 Botanical Garden', lat: 16.3896, lng: 120.6074, desc: 'Garden featuring native and ornamental plants. Peaceful and serene environment.', icon: '🌸', category: 'parks' },
+            { id: 'campjohn', name: '📌 Camp John Hay', lat: 16.3925, lng: 120.5795, desc: 'Recreation area with sports facilities, shops, and nature walks. Family-friendly.', icon: '⛺', category: 'parks' },
+            { id: 'session', name: '📌 Session Road', lat: 16.4090, lng: 120.5900, desc: 'Main commercial street with shops, cafes, and restaurants. The heart of Baguio City.', icon: '🛍️', category: 'shopping' },
+            { id: 'heritage', name: '📌 Cordillera Heritage', lat: 16.3965, lng: 120.5850, desc: 'Cultural museum showcasing indigenous art and traditions. Rich cultural experience.', icon: '🎭', category: 'cultural' },
+            { id: 'tamawan', name: '📌 Tam-Awan Village', lat: 16.3945, lng: 120.5915, desc: 'Artistic community with galleries, cafes, and craft shops. Hub for local artists.', icon: '🎨', category: 'cultural' },
+            { id: 'strawberry', name: '📌 Strawberry Farms', lat: 16.3754, lng: 120.5910, desc: 'Highland agricultural estate with farm tours and fresh local produce. Agricultural tourism.', icon: '🍓', category: 'parks' },
+            { id: 'smbaguio', name: '🛍️ SM Baguio', lat: 16.4115, lng: 120.5955, desc: 'Premier shopping mall with restaurants, entertainment, and cinema. Modern commercial hub.', icon: '🏬', category: 'shopping' }
+        ];
+
+        let map, currentDest = null, selectedRating = 0;
+        let allComments = JSON.parse(localStorage.getItem('wanderwiseUserComments')) || [];
+        let mapTypeToggled = false;
+
+        // ===== NOTIFICATION SYSTEM =====
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('exit');
+                setTimeout(() => notification.remove(), 400);
+            }, duration);
+        }
+
+        // ===== THEME MANAGEMENT =====
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'light';
+            if (saved === 'dark') document.body.classList.add('dark-mode');
+            updateThemeBtn();
+        }
+
+        function updateThemeBtn() {
+            document.getElementById('theme-toggle').textContent = 
+                document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        // ===== HAMBURGER MENU =====
+        function initHamburger() {
+            const hamburger = document.getElementById('hamburger-btn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarClose = document.getElementById('sidebar-close');
+            
+            hamburger.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+            
+            sidebarClose.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.sidebar-container') && !e.target.closest('.hamburger-btn')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
+
+        // ===== DESTINATION INITIALIZATION =====
+        function initDestinations() {
+            const destList = document.getElementById('dest-list');
+            destList.innerHTML = destinations.map(dest => `
+                <div class="dest-card" data-id="${dest.id}">
+                    <h3>${dest.name}</h3>
+                    <p>${dest.desc.substring(0, 60)}...</p>
+                    <div style="margin-top:6px;">
+                        <span class="crowd-badge" id="crowd-${dest.id}">No data</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.dest-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    currentDest = destinations.find(d => d.id === card.dataset.id);
+                    openDetailModal(currentDest);
+                });
+            });
+        }
+
+        // ===== DETAIL MODAL =====
+        function openDetailModal(dest) {
+            currentDest = dest;
+            document.getElementById('detail-title').textContent = dest.name;
+            document.getElementById('detail-coords').textContent = `📍 ${dest.lat.toFixed(4)}, ${dest.lng.toFixed(4)}`;
+            document.getElementById('detail-desc').textContent = dest.desc;
+            
+            // Calculate crowd percentage
+            const destComments = allComments.filter(c => c.destination === dest.id);
+            if (destComments.length > 0) {
+                const avgRating = destComments.reduce((sum, c) => sum + c.crowdLevel, 0) / destComments.length;
+                const percent = Math.round((avgRating / 5) * 100);
+                document.getElementById('crowd-percent').textContent = percent + '%';
+                document.getElementById('crowd-bar-fill').style.width = percent + '%';
+                
+                const crowdLabels = ['', 'Very Quiet', 'Quiet', 'Moderate', 'Crowded', 'Very Crowded'];
+                document.getElementById('crowd-text').textContent = `Based on ${destComments.length} ratings: ${crowdLabels[Math.round(avgRating)]}`;
+            } else {
+                document.getElementById('crowd-percent').textContent = '--';
+                document.getElementById('crowd-bar-fill').style.width = '0%';
+                document.getElementById('crowd-text').textContent = 'No ratings yet. Be the first to rate!';
+            }
+            
+            displayComments(dest.id);
+            document.getElementById('detail-modal').classList.add('active');
+            document.getElementById('sidebar').classList.remove('open');
+            
+            // Reset form
+            document.getElementById('comment-form').reset();
+            selectedRating = 0;
+            document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+            document.getElementById('ratingText').textContent = 'Not rated';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+
+        document.getElementById('detail-modal-close').addEventListener('click', closeDetailModal);
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') closeDetailModal();
+        });
+
+        // ===== RATING STARS =====
+        function initRatingStars() {
+            const stars = document.querySelectorAll('.star');
+            const ratingText = document.getElementById('ratingText');
+            
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    selectedRating = parseInt(star.dataset.rating);
+                    stars.forEach((s, i) => {
+                        s.classList.toggle('active', i < selectedRating);
+                    });
+                    const labels = ['', 'Very Quiet 😔', 'Quiet 🙂', 'Moderate 😐', 'Crowded 😕', 'Very Crowded 😰'];
+                    ratingText.textContent = labels[selectedRating];
+                });
+                
+                star.addEventListener('mouseover', () => {
+                    const hoverRating = parseInt(star.dataset.rating);
+                    stars.forEach((s, i) => {
+                        s.style.opacity = i < hoverRating ? '1' : '0.3';
+                    });
+                });
+            });
+            
+            document.querySelector('.rating-input').addEventListener('mouseout', () => {
+                stars.forEach((s, i) => {
+                    s.style.opacity = i < selectedRating ? '1' : '0.3';
+                });
+            });
+        }
+
+        // ===== COMMENT MANAGEMENT =====
+        function addComment(dest, name, text, rating) {
+            const comment = {
+                destination: dest.id,
+                author: name,
+                text: text,
+                crowdLevel: rating,
+                timestamp: new Date().toLocaleString(),
+                id: Date.now()
+            };
+            allComments.push(comment);
+            localStorage.setItem('wanderwiseUserComments', JSON.stringify(allComments));
+            displayComments(dest.id);
+            updateCrowdBadges();
+            showNotification(`✅ Review posted! Thanks, ${name}!`, 'success');
+        }
+
+        function deleteComment(commentId) {
+            allComments = allComments.filter(c => c.id !== commentId);
+            localStorage.setItem('wanderwiseUserComments', JSON.stringify(allComments));
+            if (currentDest) displayComments(currentDest.id);
+            updateCrowdBadges();
+            showNotification('🗑️ Review deleted', 'warning');
+        }
+
+        function displayComments(destId) {
+            const commentsList = document.getElementById('comments-list');
+            const destComments = allComments.filter(c => c.destination === destId);
+            
+            if (destComments.length === 0) {
+                commentsList.innerHTML = '<p style="color: #999; font-size: 12px;">No reviews yet. Be the first!</p>';
+                return;
+            }
+            
+            commentsList.innerHTML = destComments.map(comment => {
+                const crowdEmojis = ['', '😔', '🙂', '😐', '😕', '😰'];
+                return `
+                    <div class="comment-item">
+                        <strong>${comment.author}</strong>
+                        <span class="comment-rating">${crowdEmojis[comment.crowdLevel]} ${comment.crowdLevel}/5</span>
+                        <button class="comment-delete" onclick="deleteComment(${comment.id})">Delete</button>
+                        <div style="margin-top:6px;font-size:11px;color:#999;">${comment.timestamp}</div>
+                        <p style="margin:6px 0 0 0;">${comment.text}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCrowdBadges() {
+            destinations.forEach(dest => {
+                const destComments = allComments.filter(c => c.destination === dest.id);
+                const badge = document.getElementById(`crowd-${dest.id}`);
+                if (destComments.length === 0) {
+                    badge.textContent = 'No data';
+                } else {
+                    const avgRating = (destComments.reduce((sum, c) => sum + c.crowdLevel, 0) / destComments.length).toFixed(1);
+                    const percent = Math.round((avgRating / 5) * 100);
+                    badge.textContent = `${percent}% crowded (${destComments.length})`;
+                }
+            });
+        }
+
+        // ===== COMMENT FORM =====
+        function initCommentForm() {
+            const form = document.getElementById('comment-form');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (!currentDest) {
+                    showNotification('⚠️ Please select a destination first', 'warning');
+                    return;
+                }
+                if (selectedRating === 0) {
+                    showNotification('⭐ Please select a crowd rating', 'warning');
+                    return;
+                }
+                
+                const name = document.getElementById('comment-name').value.trim();
+                const text = document.getElementById('comment-text').value.trim();
+                
+                if (!name || !text) {
+                    showNotification('📝 Please fill in all fields', 'error');
+                    return;
+                }
+                
+                addComment(currentDest, name, text, selectedRating);
+                form.reset();
+                selectedRating = 0;
+                document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+                document.getElementById('ratingText').textContent = 'Not rated';
+            });
+        }
+
+        // ===== MAP INITIALIZATION =====
+        function initMap() {
+            map = L.map('map').setView([16.4023, 120.5960], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            addMarkers();
+        }
+
+        function addMarkers() {
+            destinations.forEach(dest => {
+                const marker = L.marker([dest.lat, dest.lng]).addTo(map);
+                marker.bindPopup(`<strong>${dest.name}</strong><br>${dest.desc}<br><a href="#" onclick="document.querySelector('[data-id=\\'${dest.id}\\']').click(); return false;" style="color: #667eea; font-weight: 600;">View Details</a>`);
+            });
+        }
+
+        // ===== MAP TYPE TOGGLE =====
+        document.getElementById('map-type-btn').addEventListener('click', () => {
+            if (!mapTypeToggled) {
+                // Switch to satellite
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.TileLayer) {
+                        map.removeLayer(layer);
+                    }
+                });
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles © Esri',
+                    maxZoom: 18
+                }).addTo(map);
+                mapTypeToggled = true;
+                document.getElementById('map-type-btn').textContent = '🗺️';
+                showNotification('🛰️ Switched to Satellite View', 'info');
+            } else {
+                // Switch to street
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.TileLayer) {
+                        map.removeLayer(layer);
+                    }
+                });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18
+                }).addTo(map);
+                mapTypeToggled = false;
+                document.getElementById('map-type-btn').textContent = '🛰️';
+                showNotification('🗺️ Switched to Street View', 'info');
+            }
+            addMarkers();
+        });
+
+        // ===== FILTERS =====
+        // Filter buttons work directly - click to filter and show on map
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filterId = btn.getAttribute('data-filter');
+                
+                // Toggle active state
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Filter destinations
+                const destCards = document.querySelectorAll('.dest-card');
+                destCards.forEach(card => {
+                    if (card.getAttribute('data-id') === filterId) {
+                        card.style.display = 'block';
+                        card.classList.add('active');
+                    } else {
+                        card.style.display = 'none';
+                        card.classList.remove('active');
+                    }
+                });
+                
+                // Find and open the destination
+                const dest = destinations.find(d => d.id === filterId);
+                if (dest) {
+                    if (map) {
+                        map.setView([dest.lat, dest.lng], 16);
+                    }
+                    openDetailModal(dest);
+                    showNotification(`📍 Showing ${dest.name.replace('📌 ', '')}`, 'info');
+                }
+            });
+        });
+
+        // Show All button
+        const showAllBtn = document.getElementById('show-all-btn');
+        if (showAllBtn) {
+            showAllBtn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                const destCards = document.querySelectorAll('.dest-card');
+                destCards.forEach(card => {
+                    card.style.display = 'block';
+                    card.classList.remove('active');
+                });
+                
+                if (map) {
+                    // Center map on Baguio City
+                    map.setView([16.4023, 120.5960], 13);
+                }
+                document.getElementById('detail-modal').classList.remove('active');
+                document.getElementById('sidebar').classList.remove('open');
+                showNotification('📍 Showing all destinations', 'success');
+            });
+        }
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            initTheme();
+            initHamburger();
+            initDestinations();
+            initRatingStars();
+            initCommentForm();
+            initMap();
+            updateCrowdBadges();
+            
+            // Theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                updateThemeBtn();
+                showNotification(isDark ? '🌙 Dark mode enabled' : '☀️ Light mode enabled', 'info');
+            });
+            
+            // Help button
+            document.getElementById('help-btn').addEventListener('click', () => {
+                document.getElementById('help-modal').style.display = 'block';
+                showNotification('ℹ️ Help opened', 'info', 1500);
+            });
+            
+            document.getElementById('help-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'help-modal') {
+                    document.getElementById('help-modal').style.display = 'none';
+                }
+            });
+            
+            showNotification('👋 Welcome! Select a destination to explore', 'success', 2000);
+        });
+    </script>
+</body>
+</html>

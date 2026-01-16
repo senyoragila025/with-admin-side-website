@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - WanderWise</title>
+    <link rel="stylesheet" href="stylesheets.css">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header-bar">
+        <div class="header-elements">
+            <div class="left-menu">
+                <div class="logo">
+                    <img src="images/icons8-location-48.png" alt="WanderWise logo">
+                </div>
+                <div class="header-text">
+                    <p id="Wise">WanderWise Admin</p>
+                    <p id="Tagline">Data Management System</p>
+                </div>
+            </div>
+            <div class="right-menu">
+                <a href="index.html" style="color:#3498db;text-decoration:none;margin-right:15px;">← Home</a>
+                <a href="map.html" style="color:#3498db;text-decoration:none;margin-right:15px;">👤 User Map</a>
+                <button id="logoutBtn" style="padding:6px 12px;background:#e74c3c;color:white;border:none;border-radius:4px;cursor:pointer;">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="map-card" style="flex-direction: column;">
+            <div class="sidebar-container" style="width: 100%; margin-right: 0; max-height: calc(100vh - 180px); overflow-y: auto;">
+                <div class="sidebar-top">
+                    <h2>📊 Data Management System</h2>
+                </div>
+                <hr>
+                <div class="scroll-area" style="padding-bottom:8px;">
+                    <!-- INPUT SECTION: Data Entry Form
+                         Purpose: Allows admins to input visitor data for destinations
+                         Features: Destination selection, date picker, hourly visitor counts (0-23 hours)
+                         Action: Submit form to save data to localStorage
+                         Format: Hourly data as comma-separated values (24 values for each hour)
+                    -->
+                    <div class="card">
+                        <h3>📥 INPUT: Enter Data</h3>
+                        <form id="dataInputForm" style="display:flex;flex-direction:column;gap:12px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#333;">Destination:</label>
+                                <select id="destSelect" style="width:100%;padding:8px;border-radius:6px;border:2px solid #ddd;font-size:13px;cursor:pointer;background:white;">
+                                    <option value="burnham">Burnham Park</option>
+                                    <option value="minesview">Mines View Park</option>
+                                    <option value="wright">Wright Park</option>
+                                    <option value="botanical">Botanical Garden</option>
+                                    <option value="johnhay">Camp John Hay</option>
+                                    <option value="session">Session Road</option>
+                                    <option value="cordillera">Cordillera Heritage</option>
+                                    <option value="tam">Tam-Awan Village</option>
+                                    <option value="strawberry">Strawberry Farms</option>
+                                    <option value="smbaguio">SM Baguio</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#333;">Date:</label>
+                                <input type="date" id="dataDate" style="width:100%;padding:8px;border-radius:6px;border:2px solid #ddd;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#333;">Hourly Visitors (24 values, 0-23 hours):</label>
+                                <textarea id="hourlyData" rows="3" placeholder="0,0,0,0,5,10,20,50,80,100,120,110,90,85,70,60,40,30,20,10,5,0,0,0" style="width:100%;padding:8px;border-radius:6px;border:2px solid #ddd;font-size:12px;font-family:monospace;"></textarea>
+                            </div>
+                            <button type="submit" style="padding:10px;background:linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;transition:all 0.3s;">Save Data</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3> PROCESS: Operation Log</h3>
+                        <div id="processLog" style="font-size:12px;background:#f7f7f7;padding:12px;border-radius:6px;max-height:120px;overflow-y:auto;border-left:4px solid #667eea;line-height:1.6;">
+                            <p style="color:#999;">System ready...</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 OUTPUT: Data Summary</h3>
+                        <p style="font-size:11px;color:#666;">Last Update: <strong id="lastUpdate" style="color:#667eea;">--</strong></p>
+                        <div id="outputSummary" style="font-size:13px;line-height:1.8;background:#f9f9f9;padding:12px;border-radius:6px;">
+                            <p style="color:#999;">No data processed yet</p>
+                        </div>
+                    </div>
+
+                    <!-- COMMENTS MODERATION: User Feedback Management
+                         Purpose: Allows admins to review and moderate user comments & ratings
+                         Features: Display all submitted comments, approve/delete functionality
+                         Status: Shows pending (⏳) vs approved (✅) comments
+                         Actions: Admins can approve (make visible to public) or delete inappropriate comments
+                    -->
+                    <div class="card">
+                        <h3>💬 User Comments & Ratings</h3>
+                        <div id="commentsSection" class="comments-section">
+                            <p style="font-size:12px;color:#999;">No comments to moderate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART AREA: Visual Analytics
+                 Purpose: Displays hourly visitor trend visualization using Chart.js
+                 Chart Type: Line chart showing visitor distribution across 24-hour period
+                 Usage: Helps admins identify peak hours and visitor patterns
+                 Updates: Refreshes when new data is saved
+            -->
+            <div style="width: 100%; padding: 12px;">
+                <div style="background:#fff;padding:16px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                    <h4 style="margin:0 0 16px 0;font-size:15px;">📈 Hourly Visitor Pattern</h4>
+                    <canvas id="adminChart" style="max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- API FOOTER CONTROL -->
+    <footer style="background:#2c3e50;color:white;padding:16px 20px;margin-top:20px;border-top:3px solid #667eea;">
+        <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <p style="font-size:13px;margin:0;"><strong>API Status:</strong> <span id="apiStatus" style="background:#2ecc71;padding:2px 8px;border-radius:3px;color:white;">Connected</span></p>
+            </div>
+            <div style="display:flex;gap:12px;">
+                <button id="syncBtn" style="padding:8px 16px;background:#3498db;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">🔄 Sync Data</button>
+                <button id="exportBtn" style="padding:8px 16px;background:#9b59b6;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">💾 Export Report</button>
+                <button id="refreshBtn" style="padding:8px 16px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">🔌 Refresh API</button>
+            </div>
+            <div style="font-size:12px;color:#bdc3c7;">
+                Last sync: <span id="lastSync">Never</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="admin.js"></script>
+</body>
+</html>
